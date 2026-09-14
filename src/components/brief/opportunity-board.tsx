@@ -108,11 +108,7 @@ export function OpportunityBoard() {
               />
             ))}
           </div>
-          {active ? (
-            <div className="lg:sticky lg:top-24">
-              <OpportunityDetail key={active.id} item={active} />
-            </div>
-          ) : null}
+          {active ? <OpportunityDetail key={active.id} item={active} /> : null}
         </div>
       )}
     </section>
