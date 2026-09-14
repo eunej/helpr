@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   actions,
   breakEvenRoas,
@@ -24,19 +25,22 @@ import {
 
 export function WedgeDemo() {
   const [view, setView] = useState<"platform" | "truth">("platform")
+  const platformView = view === "platform"
 
   const be = breakEvenRoas()
-  const reportedRoas = roas(sampleTotals.reportedSales, sampleTotals.spend)
-  const directRoas = roas(sampleTotals.directSales, sampleTotals.spend)
-  const profit = contributionProfit(sampleTotals.directSales, sampleTotals.spend)
+  const shownSales = platformView
+    ? sampleTotals.reportedSales
+    : sampleTotals.directSales
+  const shownRoas = roas(shownSales, sampleTotals.spend)
+  const shownProfit = contributionProfit(shownSales, sampleTotals.spend)
 
   const rows = keywords
     .map((row) => {
-      const shown = view === "platform" ? row.reportedSales : row.directSales
+      const sales = platformView ? row.reportedSales : row.directSales
       return {
         ...row,
-        shownRoas: roas(shown, row.spend),
-        profit: contributionProfit(row.directSales, row.spend),
+        shownRoas: roas(sales, row.spend),
+        profit: contributionProfit(sales, row.spend),
       }
     })
     .sort((a, b) => a.profit - b.profit)
@@ -60,53 +64,75 @@ export function WedgeDemo() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading text-2xl">{sampleShop.name}</CardTitle>
+            <CardTitle className="font-heading text-2xl">
+              {sampleShop.name}
+            </CardTitle>
             <CardDescription>
               {sampleShop.category} · {sampleShop.month}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={cn(
+                  buttonVariants({
+                    size: "sm",
+                    variant: platformView ? "default" : "outline",
+                  }),
+                )}
+                aria-pressed={platformView}
+                onClick={() => setView("platform")}
+              >
+                Platform report
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  buttonVariants({
+                    size: "sm",
+                    variant: platformView ? "outline" : "default",
+                  }),
+                )}
+                aria-pressed={!platformView}
+                onClick={() => setView("truth")}
+              >
+                사장님 P&amp;L
+              </button>
+            </div>
             <dl className="grid grid-cols-2 gap-3">
               <Metric label="GMV" value={formatWon(sampleShop.gmv)} />
               <Metric label="Ad spend" value={formatWon(sampleShop.adSpend)} />
               <Metric
-                label="Platform ROAS"
-                value={`${reportedRoas.toFixed(1)}x`}
-                hint="includes indirect conversions"
+                label={platformView ? "Reported ROAS" : "Direct ROAS"}
+                value={`${shownRoas.toFixed(1)}x`}
+                hint={
+                  platformView
+                    ? "includes 14-day indirect conversions"
+                    : `break-even ${be.toFixed(1)}x`
+                }
               />
               <Metric
-                label="Direct ROAS"
-                value={`${directRoas.toFixed(1)}x`}
-                hint={`break-even ${be.toFixed(1)}x`}
+                label="Break-even"
+                value={`${be.toFixed(1)}x`}
+                hint="after fees and shipping"
               />
             </dl>
             <div
               className={`rounded-lg px-3 py-3 ${
-                profit < 0
+                shownProfit < 0
                   ? "bg-destructive/10 text-destructive"
                   : "bg-primary/10 text-primary"
               }`}
             >
               <p className="text-xs tracking-wide uppercase">
-                Contribution after fees, shipping, ads
+                {platformView
+                  ? "Looks like contribution (platform lens)"
+                  : "True contribution after fees, shipping, ads"}
               </p>
-              <p className="font-heading mt-1 text-2xl">{formatWon(profit)}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant={view === "platform" ? "default" : "outline"}
-                onClick={() => setView("platform")}
-              >
-                Platform report
-              </Button>
-              <Button
-                size="sm"
-                variant={view === "truth" ? "default" : "outline"}
-                onClick={() => setView("truth")}
-              >
-                사장님 P&amp;L
-              </Button>
+              <p className="font-heading mt-1 text-2xl">
+                {formatWon(shownProfit)}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -114,14 +140,14 @@ export function WedgeDemo() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {view === "platform"
+              {platformView
                 ? "What the ads console celebrates"
                 : "What actually keeps the shop alive"}
             </CardTitle>
             <CardDescription>
-              {view === "platform"
-                ? "Reported sales include 14-day indirect conversions. Average ROAS looks investable."
-                : "Direct conversion only, minus Coupang fees and shipping. Red rows are teaching the algorithm the wrong products."}
+              {platformView
+                ? "Every row can look investable because indirect conversions pad ROAS. Click 사장님 P&L to see the same keywords after fees."
+                : "Direct conversion only. Red rows are teaching the algorithm the wrong products. Green rows are where budget should move."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -131,7 +157,9 @@ export function WedgeDemo() {
                   <tr className="border-b">
                     <th className="py-2 pr-3 font-medium">Keyword</th>
                     <th className="py-2 pr-3 font-medium">Spend</th>
-                    <th className="py-2 pr-3 font-medium">ROAS</th>
+                    <th className="py-2 pr-3 font-medium">
+                      {platformView ? "Reported ROAS" : "Direct ROAS"}
+                    </th>
                     <th className="py-2 font-medium">Contribution</th>
                   </tr>
                 </thead>
@@ -145,7 +173,9 @@ export function WedgeDemo() {
                         </p>
                       </td>
                       <td className="py-2.5 pr-3">{formatWon(row.spend)}</td>
-                      <td className="py-2.5 pr-3">{row.shownRoas.toFixed(1)}x</td>
+                      <td className="py-2.5 pr-3">
+                        {row.shownRoas.toFixed(1)}x
+                      </td>
                       <td
                         className={`py-2.5 ${
                           row.profit < 0 ? "text-destructive" : "text-primary"

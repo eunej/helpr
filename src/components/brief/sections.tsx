@@ -1,11 +1,5 @@
 import { Badge } from "@/components/ui/badge"
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
   Card,
   CardContent,
   CardDescription,
@@ -210,15 +204,28 @@ export function PlanSection() {
               Attractive on Twitter. Wrong for this background.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Accordion>
-              {passList.map((item) => (
-                <AccordionItem key={item.title} value={item.title}>
-                  <AccordionTrigger>{item.title}</AccordionTrigger>
-                  <AccordionContent>{item.reason}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+          <CardContent className="space-y-1">
+            {passList.map((item) => (
+              <details
+                key={item.title}
+                className="group border-b py-2 last:border-b-0"
+              >
+                <summary className="cursor-pointer list-none text-sm font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-start justify-between gap-3">
+                    {item.title}
+                    <span className="text-muted-foreground group-open:hidden">
+                      +
+                    </span>
+                    <span className="hidden text-muted-foreground group-open:inline">
+                      –
+                    </span>
+                  </span>
+                </summary>
+                <p className="pt-2 pb-1 text-sm leading-relaxed text-muted-foreground">
+                  {item.reason}
+                </p>
+              </details>
+            ))}
           </CardContent>
         </Card>
       </div>

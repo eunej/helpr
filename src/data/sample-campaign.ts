@@ -15,9 +15,9 @@ export const sampleShop = {
   month: "2026년 8월",
   gmv: 84_200_000,
   adSpend: 11_400_000,
-  productMargin: 0.38,
-  coupangFee: 0.11,
-  shippingShare: 0.06,
+  productMargin: 0.48,
+  coupangFee: 0.1,
+  shippingShare: 0.04,
 }
 
 export const keywords: KeywordRow[] = [
@@ -27,8 +27,8 @@ export const keywords: KeywordRow[] = [
     spend: 1_820_000,
     clicks: 1640,
     orders: 186,
-    reportedSales: 7_440_000,
-    directSales: 6_510_000,
+    reportedSales: 8_190_000,
+    directSales: 7_644_000,
     impressionShare: 0.41,
   },
   {
@@ -36,9 +36,9 @@ export const keywords: KeywordRow[] = [
     type: "수동",
     spend: 1_150_000,
     clicks: 980,
-    orders: 74,
-    reportedSales: 3_108_000,
-    directSales: 2_664_000,
+    orders: 92,
+    reportedSales: 4_370_000,
+    directSales: 4_140_000,
     impressionShare: 0.22,
   },
   {
@@ -47,7 +47,7 @@ export const keywords: KeywordRow[] = [
     spend: 2_460_000,
     clicks: 3120,
     orders: 41,
-    reportedSales: 2_050_000,
+    reportedSales: 8_610_000,
     directSales: 984_000,
     impressionShare: 0.09,
   },
@@ -57,7 +57,7 @@ export const keywords: KeywordRow[] = [
     spend: 1_980_000,
     clicks: 2410,
     orders: 28,
-    reportedSales: 1_624_000,
+    reportedSales: 6_534_000,
     directSales: 728_000,
     impressionShare: 0.07,
   },
@@ -66,9 +66,9 @@ export const keywords: KeywordRow[] = [
     type: "수동",
     spend: 2_110_000,
     clicks: 1510,
-    orders: 97,
-    reportedSales: 4_365_000,
-    directSales: 3_880_000,
+    orders: 121,
+    reportedSales: 8_018_000,
+    directSales: 7_385_000,
     impressionShare: 0.28,
   },
   {
@@ -77,7 +77,7 @@ export const keywords: KeywordRow[] = [
     spend: 1_880_000,
     clicks: 1760,
     orders: 19,
-    reportedSales: 1_216_000,
+    reportedSales: 5_828_000,
     directSales: 418_000,
     impressionShare: 0.05,
   },
@@ -100,15 +100,22 @@ export function roas(sales: number, spend: number) {
   return sales / spend
 }
 
+export function contributionRate(shop = sampleShop) {
+  return shop.productMargin - shop.coupangFee - shop.shippingShare
+}
+
 export function breakEvenRoas(shop = sampleShop) {
-  const contribution = shop.productMargin - shop.coupangFee - shop.shippingShare
+  const contribution = contributionRate(shop)
   if (contribution <= 0) return Infinity
   return 1 / contribution
 }
 
-export function contributionProfit(directSales: number, spend: number, shop = sampleShop) {
-  const contribution = shop.productMargin - shop.coupangFee - shop.shippingShare
-  return directSales * contribution - spend
+export function contributionProfit(
+  sales: number,
+  spend: number,
+  shop = sampleShop,
+) {
+  return sales * contributionRate(shop) - spend
 }
 
 export const sampleTotals = keywords.reduce(
@@ -126,12 +133,12 @@ export const actions = [
   {
     tone: "kill" as const,
     title: "이번 주 바로 끄기",
-    body: "원룸 인테리어, 이사 선물, 캠핑 수납. 세 키워드가 광고비의 55%를 쓰면서 직접 매출은 18%입니다. 보고 ROAS는 괜찮아 보이지만 직접 ROAS는 손익분기 220%를 한참 밑돕니다.",
+    body: "원룸 인테리어, 이사 선물, 캠핑 수납. 세 키워드가 광고비의 55%를 쓰면서 직접 매출은 10%입니다. 콘솔 ROAS는 3.1~3.5배로 초록불인데, 직접 ROAS는 손익분기 2.9배를 한참 밑돕니다.",
   },
   {
     tone: "scale" as const,
     title: "예산을 옮길 곳",
-    body: "수납박스 쿠팡로켓과 리빙박스 대용량은 직접 ROAS 310%·184%입니다. 끈 세 키워드 예산의 70%를 여기로 옮기면, 같은 광고비로 기여이익이 먼저 돌아옵니다.",
+    body: "수납박스 쿠팡로켓과 리빙박스 대용량은 직접 ROAS 4.2배·3.5배입니다. 끈 세 키워드 예산의 70%를 여기로 옮기면, 같은 광고비로 기여이익이 먼저 돌아옵니다.",
   },
   {
     tone: "structure" as const,

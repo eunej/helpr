@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardAction,
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 import { opportunities, type FitBand, type Opportunity } from "@/data/brief"
 
 const bands: { id: "all" | FitBand; label: string }[] = [
@@ -32,12 +33,8 @@ export function OpportunityBoard() {
   const [filter, setFilter] = useState<(typeof bands)[number]["id"]>("all")
   const [activeId, setActiveId] = useState(opportunities[0].id)
 
-  const visible = useMemo(
-    () =>
-      opportunities.filter((item) =>
-        filter === "all" ? item.band !== "pass" : item.band === filter,
-      ),
-    [filter],
+  const visible = opportunities.filter((item) =>
+    filter === "all" ? item.band !== "pass" : item.band === filter,
   )
 
   const active = visible.find((item) => item.id === activeId) ?? visible[0]
@@ -61,24 +58,33 @@ export function OpportunityBoard() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {bands.map((band) => (
-          <Button
-            key={band.id}
-            size="sm"
-            variant={filter === band.id ? "default" : "outline"}
-            onClick={() => {
-              setFilter(band.id)
-              const next = opportunities.find((item) =>
-                band.id === "all"
-                  ? item.band !== "pass"
-                  : item.band === band.id,
-              )
-              if (next) setActiveId(next.id)
-            }}
-          >
-            {band.label}
-          </Button>
-        ))}
+        {bands.map((band) => {
+          const selected = filter === band.id
+          return (
+            <button
+              key={band.id}
+              type="button"
+              aria-pressed={selected}
+              className={cn(
+                buttonVariants({
+                  size: "sm",
+                  variant: selected ? "default" : "outline",
+                }),
+              )}
+              onClick={() => {
+                setFilter(band.id)
+                const next = opportunities.find((item) =>
+                  band.id === "all"
+                    ? item.band !== "pass"
+                    : item.band === band.id,
+                )
+                if (next) setActiveId(next.id)
+              }}
+            >
+              {band.label}
+            </button>
+          )
+        })}
       </div>
 
       {visible.length === 0 ? (
@@ -86,8 +92,7 @@ export function OpportunityBoard() {
           <CardHeader>
             <CardTitle>Nothing in this filter</CardTitle>
             <CardDescription>
-              Every live bet is either &ldquo;build first&rdquo; or
-              &ldquo;strong fit.&rdquo; Switch back to All bets.
+              No markets match this filter. Switch back to All bets.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -103,7 +108,11 @@ export function OpportunityBoard() {
               />
             ))}
           </div>
-          {active ? <OpportunityDetail item={active} /> : null}
+          {active ? (
+            <div className="lg:sticky lg:top-24">
+              <OpportunityDetail key={active.id} item={active} />
+            </div>
+          ) : null}
         </div>
       )}
     </section>
@@ -123,9 +132,10 @@ function OpportunitySummary({
     <button
       type="button"
       onClick={onSelect}
+      aria-pressed={selected}
       className={`rounded-xl p-4 text-left ring-1 transition-colors ${
         selected
-          ? "bg-card ring-primary/40 shadow-sm"
+          ? "bg-card ring-2 ring-primary shadow-sm"
           : "bg-card/60 ring-foreground/10 hover:bg-card"
       }`}
     >
