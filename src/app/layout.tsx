@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Geist_Mono, Syne } from "next/font/google";
+import { SolanaWalletProvider } from "@/components/solana/solana-wallet-provider";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -35,7 +36,7 @@ export default function RootLayout({
       className={`${dmSans.variable} ${syne.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        {children}
+        <SolanaWalletProvider>{children}</SolanaWalletProvider>
       </body>
     </html>
   );

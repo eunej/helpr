@@ -136,12 +136,14 @@ export function createTask(input: {
   budgetUsd: number;
   helperId: string;
   country?: SeaCountry;
+  payerAddress?: string;
+  lockSignature?: string;
 }): Task {
   const wallet = getWallet();
   if (input.budgetUsd <= 0) {
     throw new Error("Budget must be greater than zero.");
   }
-  if (wallet.availableUsd < input.budgetUsd) {
+  if (!input.lockSignature && wallet.availableUsd < input.budgetUsd) {
     throw new Error("Not enough USDC in your demo balance.");
   }
 
@@ -152,9 +154,12 @@ export function createTask(input: {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const lockEvent = createEscrowEvent(
-    "Escrow funded",
+    input.lockSignature
+      ? "Escrow funded on Solana Devnet"
+      : "Escrow funded (demo ledger)",
     input.budgetUsd,
-    `${id}:fund:${input.budgetUsd}`
+    `${id}:fund:${input.budgetUsd}`,
+    input.lockSignature
   );
 
   const task: Task = {
@@ -171,6 +176,7 @@ export function createTask(input: {
       : helper!.name,
     helperKind: toBoard ? "human" : helper!.kind,
     deliverable: null,
+    payerAddress: input.payerAddress,
     createdAt: now,
     updatedAt: now,
     escrow: {
@@ -192,10 +198,17 @@ export function createTask(input: {
     },
   };
 
-  persistWallet({
-    availableUsd: Number((wallet.availableUsd - input.budgetUsd).toFixed(2)),
-    lockedUsd: Number((wallet.lockedUsd + input.budgetUsd).toFixed(2)),
-  });
+  if (input.lockSignature) {
+    persistWallet({
+      availableUsd: wallet.availableUsd,
+      lockedUsd: Number((wallet.lockedUsd + input.budgetUsd).toFixed(2)),
+    });
+  } else {
+    persistWallet({
+      availableUsd: Number((wallet.availableUsd - input.budgetUsd).toFixed(2)),
+      lockedUsd: Number((wallet.lockedUsd + input.budgetUsd).toFixed(2)),
+    });
+  }
   persistTasks([task, ...getTasks()]);
   return task;
 }
@@ -320,8 +333,11 @@ export function refundTask(id: string): Task {
   }
 
   const wallet = getWallet();
+  const onchain = task.escrow.events.some((event) => event.onchain);
   persistWallet({
-    availableUsd: Number((wallet.availableUsd + task.budgetUsd).toFixed(2)),
+    availableUsd: onchain
+      ? wallet.availableUsd
+      : Number((wallet.availableUsd + task.budgetUsd).toFixed(2)),
     lockedUsd: Number((wallet.lockedUsd - task.budgetUsd).toFixed(2)),
   });
 
@@ -334,7 +350,9 @@ export function refundTask(id: string): Task {
       events: [
         ...current.escrow.events,
         createEscrowEvent(
-          "Refunded to you",
+          onchain
+            ? "Marked refunded (on-chain return is manual in this demo)"
+            : "Refunded to you",
           current.budgetUsd,
           `${id}:refund`
         ),

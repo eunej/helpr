@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { StatusBadge } from "@/components/helpr/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   getHumanHelpers,
 } from "@/lib/helpers";
 import { setActiveHelperId } from "@/lib/store";
+import { explorerAddress, shortenAddress } from "@/lib/solana";
 import { cn } from "@/lib/utils";
 
 export function HelperDesk() {
@@ -22,6 +24,7 @@ export function HelperDesk() {
   const tasks = useTasks();
   const activeId = useActiveHelperId();
   const earnings = useEarnings();
+  const { publicKey, connected } = useWallet();
   const me = getHelper(activeId);
   const humans = getHumanHelpers();
 
@@ -74,6 +77,23 @@ export function HelperDesk() {
             </div>
             <div className="text-xs text-muted-foreground">
               ★ {me.rating.toFixed(1)} · {me.jobsDone}+ jobs
+            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {connected && publicKey ? (
+                <>
+                  Payout wallet{" "}
+                  <a
+                    href={explorerAddress(publicKey.toBase58())}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono underline-offset-2 hover:underline"
+                  >
+                    {shortenAddress(publicKey.toBase58())}
+                  </a>
+                </>
+              ) : (
+                "Connect a Devnet wallet in the header to receive USDC."
+              )}
             </div>
           </div>
         </div>

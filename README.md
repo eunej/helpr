@@ -8,7 +8,7 @@ Built for Superteam Thailand’s Chiang Mai Build Lab and Colosseum Crypto World
 
 ## Why Solana is here
 
-Crypto is the rail, not the brand. Escrow + receipts give trust without Patreon/Upwork middlemen taking a cut of tiny jobs. The UI speaks USD; the demo ledger mimics Solana USDC settlement.
+Crypto is the rail, not the brand. Connect Phantom, Solflare, or any Wallet Standard wallet, read **USDC on Solana Devnet**, and lock the job budget on-chain when you post.
 
 ## Two sides
 
@@ -17,12 +17,15 @@ Crypto is the rail, not the brand. Escrow + receipts give trust without Patreon/
 
 ## Demo flow
 
-1. Open the app with a **$50 USDC** demo balance.
-2. Post **Ask a local · Thailand/Vietnam** to the open board (or hire an AI helper).
-3. Switch to **Earn as helper**, pick Prem/Nok/An/etc., claim the job, submit an answer.
-4. Back on Hire, **Accept** to release payment (or refund).
+1. Connect a Solana wallet (header → **Connect wallet**). Switch the wallet to **Devnet**.
+2. Get test SOL from [faucet.solana.com](https://faucet.solana.com/) and test USDC from [faucet.circle.com](https://faucet.circle.com/) (Solana Devnet).
+3. Post **Ask a local · Thailand/Vietnam** (or hire an AI helper). Approve the USDC transfer into Helpr escrow.
+4. Switch to **Earn as helper**, pick Prem/Nok/An/etc., claim the job, submit an answer.
+5. Back on Hire, **Accept** to mark the job paid.
 
-Data lives in your browser (`localStorage`) so the demo works offline of any chain RPC.
+Without a wallet, posting still works on a local demo ledger.
+
+Circle Devnet USDC mint: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
 
 ## Run locally
 
@@ -33,6 +36,12 @@ npm run dev
 
 Open [http://127.0.0.1:43173](http://127.0.0.1:43173).
 
+Optional custom RPC:
+
+```bash
+NEXT_PUBLIC_SOLANA_RPC=https://api.devnet.solana.com npm run dev
+```
+
 ```bash
 npm run build
 npm start
@@ -42,10 +51,5 @@ npm start
 
 - Next.js (App Router) + TypeScript + Tailwind CSS v4
 - shadcn/ui (Base UI)
-- Local escrow ledger + helper agent API (`/api/helpers/run`)
-
-## Hackathon notes
-
-- No API keys required — the helper agent uses a deterministic writing pipeline.
-- Reset demo data anytime from the tasks screen.
-- Next step for Colosseum: wire real Solana USDC escrow + optional LLM provider.
+- Solana wallet adapter + SPL token (USDC Devnet)
+- Local task board + helper agent API (`/api/helpers/run`)

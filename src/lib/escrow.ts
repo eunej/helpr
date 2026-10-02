@@ -18,14 +18,16 @@ export function shortenSig(sig: string): string {
 export function createEscrowEvent(
   label: string,
   amountUsd: number,
-  seed: string
+  seed: string,
+  signature?: string
 ): EscrowEvent {
   return {
     id: crypto.randomUUID(),
     label,
     amountUsd,
-    signature: makeSignature(seed),
+    signature: signature ?? makeSignature(seed),
     at: new Date().toISOString(),
+    onchain: Boolean(signature),
   };
 }
 

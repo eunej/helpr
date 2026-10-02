@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,14 +15,24 @@ import {
   getHelper,
   helpersForCategory,
 } from "@/lib/helpers";
+import { lockUsdcToEscrow } from "@/lib/lock-usdc";
+import {
+  CIRCLE_USDC_FAUCET,
+  SOLANA_SOL_FAUCET,
+} from "@/lib/solana";
 import { createTask, markDelivered, markWorking } from "@/lib/store";
 import type { TaskCategory } from "@/lib/types";
-import { useWallet } from "@/hooks/use-helpr";
+import { useWallet as useDemoWallet } from "@/hooks/use-helpr";
+import { useUsdcBalance } from "@/hooks/use-usdc-balance";
 import { cn } from "@/lib/utils";
 
 export function NewTaskForm() {
   const router = useRouter();
-  const wallet = useWallet();
+  const demoWallet = useDemoWallet();
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { setVisible } = useWalletModal();
+  const { balanceUsd, refresh } = useUsdcBalance();
   const [category, setCategory] = useState<TaskCategory>("ask-thailand");
   const meta = useMemo(
     () => CATEGORIES.find((c) => c.id === category)!,
@@ -66,6 +78,17 @@ export function NewTaskForm() {
 
     startTransition(async () => {
       try {
+        let lockSignature: string | undefined;
+        if (connected && publicKey) {
+          lockSignature = await lockUsdcToEscrow({
+            connection,
+            owner: publicKey,
+            amountUsd: budgetUsd,
+            sendTransaction,
+          });
+          await refresh();
+        }
+
         const task = createTask({
           title,
           brief,
@@ -73,6 +96,8 @@ export function NewTaskForm() {
           budgetUsd,
           helperId,
           country: meta.country,
+          payerAddress: publicKey?.toBase58(),
+          lockSignature,
         });
 
         if (isMarketplace) {
@@ -182,8 +207,19 @@ export function NewTaskForm() {
             className="h-11 rounded-xl px-3"
           />
           <p className="text-xs text-muted-foreground">
-            Available: ${wallet.availableUsd.toFixed(2)} USDC demo balance
+            {connected
+              ? `Devnet wallet: $${(balanceUsd ?? 0).toFixed(2)} USDC`
+              : `Demo ledger: $${demoWallet.availableUsd.toFixed(2)} USDC · connect a wallet to lock real Devnet USDC`}
           </p>
+          {!connected && (
+            <button
+              type="button"
+              onClick={() => setVisible(true)}
+              className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Connect Phantom / Solflare (Devnet)
+            </button>
+          )}
         </div>
         <div className="space-y-2">
           <Label>
@@ -260,8 +296,26 @@ export function NewTaskForm() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-md text-sm text-muted-foreground">
-          Funds lock in escrow when you post. Locals claim from the helper
-          board; you release USDC only when you accept the answer.
+          {connected
+            ? "Your wallet will sign a Devnet USDC transfer into Helpr escrow. Approve in Phantom/Solflare."
+            : "Connect a Solana wallet to lock real Devnet USDC — or post on the demo ledger."}{" "}
+          <a
+            href={CIRCLE_USDC_FAUCET}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            USDC faucet
+          </a>
+          {" · "}
+          <a
+            href={SOLANA_SOL_FAUCET}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            SOL faucet
+          </a>
         </p>
         <Button
           type="submit"

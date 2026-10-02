@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
     "*.cursor.sh",
     "*.cursor.com",
   ],
+  transpilePackages: [
+    "@solana/wallet-adapter-base",
+    "@solana/wallet-adapter-react",
+    "@solana/wallet-adapter-react-ui",
+  ],
 };
 
 export default nextConfig;

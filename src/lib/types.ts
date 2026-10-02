@@ -39,6 +39,7 @@ export type EscrowEvent = {
   amountUsd: number;
   signature: string;
   at: string;
+  onchain?: boolean;
 };
 
 export type Task = {
@@ -54,6 +55,7 @@ export type Task = {
   helperName: string;
   helperKind: HelperKind;
   deliverable: string | null;
+  payerAddress?: string;
   createdAt: string;
   updatedAt: string;
   escrow: {

@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/helpr/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useHasMounted, useTask } from "@/hooks/use-helpr";
 import { shortenSig } from "@/lib/escrow";
+import { explorerAddress, explorerTx, shortenAddress } from "@/lib/solana";
 import { acceptTask, refundTask } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -198,8 +199,9 @@ export function TaskDetail({ id }: { id: string }) {
           <div className="rounded-2xl border border-border/70 bg-background/60 p-5">
             <h2 className="font-display text-xl">Escrow</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              USDC on Solana (demo ledger). Crypto stays in the background —
-              you see status and receipts.
+              {task.escrow.events.some((e) => e.onchain)
+                ? "USDC locked on Solana Devnet. Accept marks the job paid in-app."
+                : "Demo ledger — connect a wallet next time to lock real Devnet USDC."}
             </p>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between gap-4">
@@ -212,6 +214,21 @@ export function TaskDetail({ id }: { id: string }) {
                 <dt className="text-muted-foreground">Budget</dt>
                 <dd className="font-medium">${task.budgetUsd.toFixed(2)}</dd>
               </div>
+              {task.payerAddress && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Payer</dt>
+                  <dd>
+                    <a
+                      href={explorerAddress(task.payerAddress)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono text-xs underline-offset-2 hover:underline"
+                    >
+                      {shortenAddress(task.payerAddress)}
+                    </a>
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
 
@@ -232,8 +249,19 @@ export function TaskDetail({ id }: { id: string }) {
                     {event.amountUsd > 0
                       ? `$${event.amountUsd.toFixed(2)} USDC · `
                       : null}
-                    {shortenSig(event.signature)} ·{" "}
-                    {new Date(event.at).toLocaleTimeString()}
+                    {event.onchain ? (
+                      <a
+                        href={explorerTx(event.signature)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {shortenSig(event.signature)} ↗
+                      </a>
+                    ) : (
+                      <>{shortenSig(event.signature)}</>
+                    )}{" "}
+                    · {new Date(event.at).toLocaleTimeString()}
                   </div>
                 </li>
               ))}

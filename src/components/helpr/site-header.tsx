@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WalletConnectButton } from "@/components/solana/wallet-connect-button";
 import { buttonVariants } from "@/components/ui/button";
 import { useHasMounted, useWallet } from "@/hooks/use-helpr";
 import { cn } from "@/lib/utils";
@@ -51,20 +52,15 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3">
-        {mounted && (
+      <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3">
+        {mounted && wallet.lockedUsd > 0 && (
           <div className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
-            <span className="font-medium text-foreground">
-              ${wallet.availableUsd.toFixed(2)}
-            </span>{" "}
-            USDC
-            {wallet.lockedUsd > 0 && (
-              <span className="ml-2 text-primary">
-                · ${wallet.lockedUsd.toFixed(2)} locked
-              </span>
-            )}
+            <span className="text-primary">
+              ${wallet.lockedUsd.toFixed(2)} locked
+            </span>
           </div>
         )}
+        <WalletConnectButton />
         <Link
           href={onHelper ? "/helper" : "/app/new"}
           className={cn(buttonVariants({ size: "sm" }), "no-underline")}
