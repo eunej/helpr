@@ -7,53 +7,71 @@ import type { Task, TaskCategory, WalletState } from "@/lib/types";
 const TASKS_KEY = "helpr.tasks.v1";
 const WALLET_KEY = "helpr.wallet.v1";
 
-function readTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(TASKS_KEY);
-    return raw ? (JSON.parse(raw) as Task[]) : [];
-  } catch {
-    return [];
-  }
-}
+export const EMPTY_TASKS: Task[] = [];
+export const SERVER_WALLET: WalletState = {
+  availableUsd: STARTING_BALANCE_USD,
+  lockedUsd: 0,
+};
 
-function writeTasks(tasks: Task[]) {
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  window.dispatchEvent(new Event("helpr:update"));
-}
+let tasksCache: Task[] = EMPTY_TASKS;
+let walletCache: WalletState = SERVER_WALLET;
+let hydrated = false;
 
-function readWallet(): WalletState {
-  if (typeof window === "undefined") {
-    return { availableUsd: STARTING_BALANCE_USD, lockedUsd: 0 };
-  }
-  try {
-    const raw = localStorage.getItem(WALLET_KEY);
-    if (!raw) {
-      return { availableUsd: STARTING_BALANCE_USD, lockedUsd: 0 };
-    }
-    return JSON.parse(raw) as WalletState;
-  } catch {
-    return { availableUsd: STARTING_BALANCE_USD, lockedUsd: 0 };
-  }
-}
-
-function writeWallet(wallet: WalletState) {
-  localStorage.setItem(WALLET_KEY, JSON.stringify(wallet));
-  window.dispatchEvent(new Event("helpr:update"));
-}
-
-export function getTasks(): Task[] {
-  return readTasks().sort(
+function sortTasks(tasks: Task[]): Task[] {
+  return [...tasks].sort(
     (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
   );
 }
 
-export function getTask(id: string): Task | undefined {
-  return readTasks().find((t) => t.id === id);
+function hydrate() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+
+  try {
+    const rawTasks = localStorage.getItem(TASKS_KEY);
+    tasksCache = rawTasks
+      ? sortTasks(JSON.parse(rawTasks) as Task[])
+      : EMPTY_TASKS;
+  } catch {
+    tasksCache = EMPTY_TASKS;
+  }
+
+  try {
+    const rawWallet = localStorage.getItem(WALLET_KEY);
+    walletCache = rawWallet
+      ? (JSON.parse(rawWallet) as WalletState)
+      : { ...SERVER_WALLET };
+  } catch {
+    walletCache = { ...SERVER_WALLET };
+  }
 }
 
+function persistTasks(tasks: Task[]) {
+  tasksCache = sortTasks(tasks);
+  localStorage.setItem(TASKS_KEY, JSON.stringify(tasksCache));
+  window.dispatchEvent(new Event("helpr:update"));
+}
+
+function persistWallet(wallet: WalletState) {
+  walletCache = wallet;
+  localStorage.setItem(WALLET_KEY, JSON.stringify(walletCache));
+  window.dispatchEvent(new Event("helpr:update"));
+}
+
+/** Stable snapshot for useSyncExternalStore — same reference until data changes. */
+export function getTasks(): Task[] {
+  hydrate();
+  return tasksCache;
+}
+
+export function getTask(id: string): Task | undefined {
+  return getTasks().find((t) => t.id === id);
+}
+
+/** Stable snapshot for useSyncExternalStore — same reference until data changes. */
 export function getWallet(): WalletState {
-  return readWallet();
+  hydrate();
+  return walletCache;
 }
 
 export function createTask(input: {
@@ -63,7 +81,7 @@ export function createTask(input: {
   budgetUsd: number;
   helperId: string;
 }): Task {
-  const wallet = readWallet();
+  const wallet = getWallet();
   if (input.budgetUsd <= 0) {
     throw new Error("Budget must be greater than zero.");
   }
@@ -99,11 +117,11 @@ export function createTask(input: {
     },
   };
 
-  writeWallet({
+  persistWallet({
     availableUsd: Number((wallet.availableUsd - input.budgetUsd).toFixed(2)),
     lockedUsd: Number((wallet.lockedUsd + input.budgetUsd).toFixed(2)),
   });
-  writeTasks([task, ...readTasks()]);
+  persistTasks([task, ...getTasks()]);
   return task;
 }
 
@@ -142,8 +160,8 @@ export function acceptTask(id: string): Task {
     throw new Error("Only delivered tasks can be accepted.");
   }
 
-  const wallet = readWallet();
-  writeWallet({
+  const wallet = getWallet();
+  persistWallet({
     availableUsd: wallet.availableUsd,
     lockedUsd: Number((wallet.lockedUsd - task.budgetUsd).toFixed(2)),
   });
@@ -176,8 +194,8 @@ export function refundTask(id: string): Task {
     throw new Error("Nothing left to refund.");
   }
 
-  const wallet = readWallet();
-  writeWallet({
+  const wallet = getWallet();
+  persistWallet({
     availableUsd: Number((wallet.availableUsd + task.budgetUsd).toFixed(2)),
     lockedUsd: Number((wallet.lockedUsd - task.budgetUsd).toFixed(2)),
   });
@@ -201,23 +219,21 @@ export function refundTask(id: string): Task {
 }
 
 export function resetDemo() {
+  tasksCache = EMPTY_TASKS;
+  walletCache = { ...SERVER_WALLET };
   localStorage.removeItem(TASKS_KEY);
-  localStorage.setItem(
-    WALLET_KEY,
-    JSON.stringify({
-      availableUsd: STARTING_BALANCE_USD,
-      lockedUsd: 0,
-    } satisfies WalletState)
-  );
+  localStorage.setItem(WALLET_KEY, JSON.stringify(walletCache));
+  hydrated = true;
   window.dispatchEvent(new Event("helpr:update"));
 }
 
 function updateTask(id: string, updater: (task: Task) => Task): Task {
-  const tasks = readTasks();
+  const tasks = getTasks();
   const index = tasks.findIndex((t) => t.id === id);
   if (index < 0) throw new Error("Task not found.");
   const next = updater(tasks[index]);
-  tasks[index] = next;
-  writeTasks(tasks);
+  const copy = [...tasks];
+  copy[index] = next;
+  persistTasks(copy);
   return next;
 }

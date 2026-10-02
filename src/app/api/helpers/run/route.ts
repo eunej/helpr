@@ -9,7 +9,6 @@ export async function POST(request: Request) {
       title?: string;
       brief?: string;
       helperName?: string;
-      helperKind?: "ai" | "human";
     };
 
     if (!body.brief?.trim() || !body.category || !body.helperName) {

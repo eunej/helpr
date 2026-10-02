@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { getTasks, getWallet } from "@/lib/store";
+import {
+  EMPTY_TASKS,
+  SERVER_WALLET,
+  getTasks,
+  getWallet,
+} from "@/lib/store";
 import type { Task, WalletState } from "@/lib/types";
 
 function subscribe(onStoreChange: () => void) {
@@ -13,16 +18,20 @@ function subscribe(onStoreChange: () => void) {
   };
 }
 
+function getServerWallet() {
+  return SERVER_WALLET;
+}
+
+function getServerTasks() {
+  return EMPTY_TASKS;
+}
+
 export function useWallet(): WalletState {
-  return useSyncExternalStore(
-    subscribe,
-    getWallet,
-    () => ({ availableUsd: 50, lockedUsd: 0 })
-  );
+  return useSyncExternalStore(subscribe, getWallet, getServerWallet);
 }
 
 export function useTasks(): Task[] {
-  return useSyncExternalStore(subscribe, getTasks, () => []);
+  return useSyncExternalStore(subscribe, getTasks, getServerTasks);
 }
 
 export function useTask(id: string): Task | undefined {
