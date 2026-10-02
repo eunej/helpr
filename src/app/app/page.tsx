@@ -34,6 +34,15 @@ export default function AppHomePage() {
               Reset demo
             </button>
             <Link
+              href="/app/helpers"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "rounded-xl"
+              )}
+            >
+              Helpers
+            </Link>
+            <Link
               href="/app/new"
               className={cn(
                 buttonVariants({ size: "sm" }),

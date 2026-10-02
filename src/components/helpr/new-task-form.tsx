@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORIES, HELPERS, getHelper } from "@/lib/helpers";
+import {
+  CATEGORIES,
+  OPEN_BOARD_ID,
+  countryLabel,
+  getHelper,
+  helpersForCategory,
+} from "@/lib/helpers";
 import { createTask, markDelivered, markWorking } from "@/lib/store";
 import type { TaskCategory } from "@/lib/types";
 import { useWallet } from "@/hooks/use-helpr";
@@ -15,14 +21,18 @@ import { cn } from "@/lib/utils";
 export function NewTaskForm() {
   const router = useRouter();
   const wallet = useWallet();
-  const [category, setCategory] = useState<TaskCategory>("resume");
+  const [category, setCategory] = useState<TaskCategory>("ask-thailand");
   const meta = useMemo(
     () => CATEGORIES.find((c) => c.id === category)!,
     [category]
   );
-  const [title, setTitle] = useState("Fix my resume bullets");
+  const availableHelpers = useMemo(
+    () => helpersForCategory(category),
+    [category]
+  );
+  const [title, setTitle] = useState("Ask a local · Thailand");
   const [brief, setBrief] = useState(
-    "Built growth campaigns for SEA sellers\nWorked with partners on ads ROAS\nWant something sharper for a product role"
+    "Staying in Chiang Mai for 4 weeks — Nimman or Old City for coworking + quiet nights? Also, can landlords take USDC or do I need PromptPay?"
   );
   const [budget, setBudget] = useState(String(meta.defaultBudget));
   const [helperId, setHelperId] = useState(meta.suggestedHelperId);
@@ -35,12 +45,24 @@ export function NewTaskForm() {
     setBudget(String(cat.defaultBudget));
     setHelperId(cat.suggestedHelperId);
     setTitle(cat.label);
+    if (next === "ask-thailand") {
+      setBrief(
+        "Staying in Chiang Mai for 4 weeks — Nimman or Old City for coworking + quiet nights? Also, can landlords take USDC or do I need PromptPay?"
+      );
+    } else if (next === "ask-vietnam") {
+      setBrief(
+        "Moving to Da Nang for 2 months remote work. Which area has good Wi‑Fi cafés and is safe on a scooter at night? Any e-visa gotchas?"
+      );
+    }
   }
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     const budgetUsd = Number(budget);
+    const toBoard = helperId === OPEN_BOARD_ID;
+    const helper = toBoard ? null : getHelper(helperId);
+    const isMarketplace = toBoard || helper?.kind === "human";
 
     startTransition(async () => {
       try {
@@ -50,10 +72,15 @@ export function NewTaskForm() {
           category,
           budgetUsd,
           helperId,
+          country: meta.country,
         });
-        markWorking(task.id);
 
-        const helper = getHelper(helperId);
+        if (isMarketplace) {
+          router.push(`/app/tasks/${task.id}`);
+          return;
+        }
+
+        markWorking(task.id);
         const res = await fetch("/api/helpers/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -61,8 +88,7 @@ export function NewTaskForm() {
             category,
             title,
             brief,
-            helperName: helper.name,
-            helperKind: helper.kind,
+            helperName: helper!.name,
           }),
         });
         const data = (await res.json()) as {
@@ -79,6 +105,19 @@ export function NewTaskForm() {
       }
     });
   }
+
+  const ctaLabel = (() => {
+    if (pending) return "Posting…";
+    const amount = Number(budget) || 0;
+    if (helperId === OPEN_BOARD_ID) {
+      return `Lock $${amount} & post to board`;
+    }
+    const helper = getHelper(helperId);
+    if (helper.kind === "human") {
+      return `Lock $${amount} & request ${helper.name}`;
+    }
+    return `Lock $${amount} & hire`;
+  })();
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
@@ -106,7 +145,9 @@ export function NewTaskForm() {
 
       <section className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="title">Task title</Label>
+          <Label htmlFor="title">
+            {meta.country ? "Your question" : "Task title"}
+          </Label>
           <Input
             id="title"
             value={title}
@@ -116,7 +157,9 @@ export function NewTaskForm() {
           />
         </div>
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="brief">Your draft / notes</Label>
+          <Label htmlFor="brief">
+            {meta.country ? "Details for a local" : "Your draft / notes"}
+          </Label>
           <Textarea
             id="brief"
             value={brief}
@@ -143,9 +186,37 @@ export function NewTaskForm() {
           </p>
         </div>
         <div className="space-y-2">
-          <Label>Helper</Label>
-          <div className="grid gap-2">
-            {HELPERS.map((helper) => (
+          <Label>
+            {meta.country
+              ? `Local helper · ${countryLabel(meta.country)}`
+              : "Helper"}
+          </Label>
+          <div className="grid max-h-80 gap-2 overflow-y-auto pr-1">
+            {(meta.marketplaceDefault || meta.country) && (
+              <button
+                key={OPEN_BOARD_ID}
+                type="button"
+                onClick={() => setHelperId(OPEN_BOARD_ID)}
+                className={cn(
+                  "rounded-xl border px-3 py-2.5 text-left transition-all",
+                  helperId === OPEN_BOARD_ID
+                    ? "border-primary bg-primary/10"
+                    : "border-border/80 hover:border-primary/40"
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium">Open local board</span>
+                  <span className="text-xs text-muted-foreground">
+                    any verified local
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Post once — helpers in{" "}
+                  {countryLabel(meta.country)} can claim and answer.
+                </p>
+              </button>
+            )}
+            {availableHelpers.map((helper) => (
               <button
                 key={helper.id}
                 type="button"
@@ -162,10 +233,11 @@ export function NewTaskForm() {
                     {helper.name}{" "}
                     <span className="text-xs font-normal text-muted-foreground">
                       · {helper.kind === "ai" ? "AI agent" : "Human"}
+                      {helper.city ? ` · ${helper.city}` : ""}
                     </span>
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {helper.eta}
+                    ★ {helper.rating.toFixed(1)}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -188,8 +260,8 @@ export function NewTaskForm() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-md text-sm text-muted-foreground">
-          Funds lock in escrow the moment you post. You only release USDC when
-          you accept the deliverable.
+          Funds lock in escrow when you post. Locals claim from the helper
+          board; you release USDC only when you accept the answer.
         </p>
         <Button
           type="submit"
@@ -197,7 +269,7 @@ export function NewTaskForm() {
           disabled={pending}
           className="h-11 rounded-xl px-6"
         >
-          {pending ? "Helper is on it…" : `Lock $${Number(budget) || 0} & hire`}
+          {ctaLabel}
         </Button>
       </div>
     </form>

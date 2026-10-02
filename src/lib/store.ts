@@ -1,20 +1,30 @@
 "use client";
 
 import { createEscrowEvent, STARTING_BALANCE_USD } from "@/lib/escrow";
-import { getHelper } from "@/lib/helpers";
-import type { Task, TaskCategory, WalletState } from "@/lib/types";
+import { OPEN_BOARD_ID, getHelper } from "@/lib/helpers";
+import type {
+  SeaCountry,
+  Task,
+  TaskCategory,
+  WalletState,
+} from "@/lib/types";
 
-const TASKS_KEY = "helpr.tasks.v1";
-const WALLET_KEY = "helpr.wallet.v1";
+const TASKS_KEY = "helpr.tasks.v2";
+const WALLET_KEY = "helpr.wallet.v2";
+const EARNINGS_KEY = "helpr.earnings.v2";
+const ACTIVE_HELPER_KEY = "helpr.activeHelper.v2";
 
 export const EMPTY_TASKS: Task[] = [];
 export const SERVER_WALLET: WalletState = {
   availableUsd: STARTING_BALANCE_USD,
   lockedUsd: 0,
 };
+export const EMPTY_EARNINGS: Record<string, number> = {};
 
 let tasksCache: Task[] = EMPTY_TASKS;
 let walletCache: WalletState = SERVER_WALLET;
+let earningsCache: Record<string, number> = EMPTY_EARNINGS;
+let activeHelperIdCache = "prem";
 let hydrated = false;
 
 function sortTasks(tasks: Task[]): Task[] {
@@ -44,6 +54,18 @@ function hydrate() {
   } catch {
     walletCache = { ...SERVER_WALLET };
   }
+
+  try {
+    const rawEarnings = localStorage.getItem(EARNINGS_KEY);
+    earningsCache = rawEarnings
+      ? (JSON.parse(rawEarnings) as Record<string, number>)
+      : {};
+  } catch {
+    earningsCache = {};
+  }
+
+  activeHelperIdCache =
+    localStorage.getItem(ACTIVE_HELPER_KEY) || "prem";
 }
 
 function persistTasks(tasks: Task[]) {
@@ -58,7 +80,12 @@ function persistWallet(wallet: WalletState) {
   window.dispatchEvent(new Event("helpr:update"));
 }
 
-/** Stable snapshot for useSyncExternalStore — same reference until data changes. */
+function persistEarnings(earnings: Record<string, number>) {
+  earningsCache = earnings;
+  localStorage.setItem(EARNINGS_KEY, JSON.stringify(earningsCache));
+  window.dispatchEvent(new Event("helpr:update"));
+}
+
 export function getTasks(): Task[] {
   hydrate();
   return tasksCache;
@@ -68,10 +95,38 @@ export function getTask(id: string): Task | undefined {
   return getTasks().find((t) => t.id === id);
 }
 
-/** Stable snapshot for useSyncExternalStore — same reference until data changes. */
 export function getWallet(): WalletState {
   hydrate();
   return walletCache;
+}
+
+export function getEarnings(): Record<string, number> {
+  hydrate();
+  return earningsCache;
+}
+
+export function getActiveHelperId(): string {
+  hydrate();
+  return activeHelperIdCache;
+}
+
+export function setActiveHelperId(id: string) {
+  hydrate();
+  activeHelperIdCache = id;
+  localStorage.setItem(ACTIVE_HELPER_KEY, id);
+  window.dispatchEvent(new Event("helpr:update"));
+}
+
+export function getOpenTasks(): Task[] {
+  return getTasks().filter((t) => t.status === "open");
+}
+
+export function getHelperQueue(helperId: string): Task[] {
+  return getTasks().filter(
+    (t) =>
+      t.helperId === helperId &&
+      (t.status === "working" || t.status === "delivered")
+  );
 }
 
 export function createTask(input: {
@@ -80,6 +135,7 @@ export function createTask(input: {
   category: TaskCategory;
   budgetUsd: number;
   helperId: string;
+  country?: SeaCountry;
 }): Task {
   const wallet = getWallet();
   if (input.budgetUsd <= 0) {
@@ -89,7 +145,10 @@ export function createTask(input: {
     throw new Error("Not enough USDC in your demo balance.");
   }
 
-  const helper = getHelper(input.helperId);
+  const toBoard = input.helperId === OPEN_BOARD_ID;
+  const helper = toBoard ? null : getHelper(input.helperId);
+  const marketplace =
+    toBoard || helper?.kind === "human";
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const lockEvent = createEscrowEvent(
@@ -103,17 +162,33 @@ export function createTask(input: {
     title: input.title.trim(),
     brief: input.brief.trim(),
     category: input.category,
+    country: input.country,
     budgetUsd: input.budgetUsd,
-    status: "funded",
-    helperId: helper.id,
-    helperName: helper.name,
-    helperKind: helper.kind,
+    status: marketplace ? "open" : "funded",
+    helperId: toBoard ? "" : helper!.id,
+    helperName: toBoard
+      ? "Open to local helpers"
+      : helper!.name,
+    helperKind: toBoard ? "human" : helper!.kind,
     deliverable: null,
     createdAt: now,
     updatedAt: now,
     escrow: {
       lockedUsd: input.budgetUsd,
-      events: [lockEvent],
+      events: [
+        lockEvent,
+        ...(marketplace
+          ? [
+              createEscrowEvent(
+                toBoard
+                  ? "Listed on helper board"
+                  : `Offered to ${helper!.name}`,
+                0,
+                `${id}:list`
+              ),
+            ]
+          : []),
+      ],
     },
   };
 
@@ -123,6 +198,48 @@ export function createTask(input: {
   });
   persistTasks([task, ...getTasks()]);
   return task;
+}
+
+export function claimTask(taskId: string, helperId: string): Task {
+  const helper = getHelper(helperId);
+  if (helper.kind !== "human") {
+    throw new Error("Only human helpers can claim board jobs.");
+  }
+
+  return updateTask(taskId, (task) => {
+    if (task.status !== "open") {
+      throw new Error("This job is no longer open.");
+    }
+    if (task.helperId && task.helperId !== helper.id) {
+      throw new Error(`This job was offered to ${task.helperName}.`);
+    }
+    if (
+      task.country &&
+      helper.country &&
+      task.country !== helper.country
+    ) {
+      throw new Error("This question is for a different country.");
+    }
+    return {
+      ...task,
+      status: "working",
+      helperId: helper.id,
+      helperName: helper.name,
+      helperKind: "human",
+      updatedAt: new Date().toISOString(),
+      escrow: {
+        ...task.escrow,
+        events: [
+          ...task.escrow.events,
+          createEscrowEvent(
+            `${helper.name} claimed the job`,
+            0,
+            `${taskId}:claim:${helper.id}`
+          ),
+        ],
+      },
+    };
+  });
 }
 
 export function markWorking(id: string): Task {
@@ -165,6 +282,14 @@ export function acceptTask(id: string): Task {
     availableUsd: wallet.availableUsd,
     lockedUsd: Number((wallet.lockedUsd - task.budgetUsd).toFixed(2)),
   });
+
+  if (task.helperId) {
+    const earnings = { ...getEarnings() };
+    earnings[task.helperId] = Number(
+      ((earnings[task.helperId] ?? 0) + task.budgetUsd).toFixed(2)
+    );
+    persistEarnings(earnings);
+  }
 
   return updateTask(id, (current) => ({
     ...current,
@@ -221,7 +346,9 @@ export function refundTask(id: string): Task {
 export function resetDemo() {
   tasksCache = EMPTY_TASKS;
   walletCache = { ...SERVER_WALLET };
+  earningsCache = {};
   localStorage.removeItem(TASKS_KEY);
+  localStorage.removeItem(EARNINGS_KEY);
   localStorage.setItem(WALLET_KEY, JSON.stringify(walletCache));
   hydrated = true;
   window.dispatchEvent(new Event("helpr:update"));

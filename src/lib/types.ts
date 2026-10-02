@@ -3,9 +3,14 @@ export type TaskCategory =
   | "caption"
   | "email"
   | "rewrite"
+  | "ask-thailand"
+  | "ask-vietnam"
   | "other";
 
+export type SeaCountry = "thailand" | "vietnam";
+
 export type TaskStatus =
+  | "open"
   | "funded"
   | "working"
   | "delivered"
@@ -21,6 +26,11 @@ export type Helper = {
   specialty: string;
   blurb: string;
   eta: string;
+  country?: SeaCountry;
+  city?: string;
+  languages: string[];
+  rating: number;
+  jobsDone: number;
 };
 
 export type EscrowEvent = {
@@ -36,8 +46,10 @@ export type Task = {
   title: string;
   brief: string;
   category: TaskCategory;
+  country?: SeaCountry;
   budgetUsd: number;
   status: TaskStatus;
+  /** Empty string when posted to the open helper board. */
   helperId: string;
   helperName: string;
   helperKind: HelperKind;

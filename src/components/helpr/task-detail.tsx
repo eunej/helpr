@@ -70,16 +70,35 @@ export function TaskDetail({ id }: { id: string }) {
             <StatusBadge status={task.status} />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            {task.helperName} ({task.helperKind === "ai" ? "AI agent" : "Human"})
+            {task.helperName}
+            {task.helperId
+              ? ` (${task.helperKind === "ai" ? "AI agent" : "Human"})`
+              : ""}
             · ${task.budgetUsd.toFixed(2)} USDC
+            {task.country
+              ? ` · ${task.country === "thailand" ? "Thailand" : "Vietnam"}`
+              : ""}
           </p>
         </div>
-        <Link
-          href="/app"
-          className={cn(buttonVariants({ variant: "outline" }), "rounded-xl")}
-        >
-          All tasks
-        </Link>
+        <div className="flex gap-2">
+          {task.status === "open" && (
+            <Link
+              href="/helper"
+              className={cn(buttonVariants({ size: "sm" }), "rounded-xl")}
+            >
+              Open helper board
+            </Link>
+          )}
+          <Link
+            href="/app"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "rounded-xl"
+            )}
+          >
+            All tasks
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -95,8 +114,13 @@ export function TaskDetail({ id }: { id: string }) {
 
           <div className="animate-rise rounded-2xl border border-primary/25 bg-primary/5 p-5">
             <h2 className="text-sm font-medium text-primary">Deliverable</h2>
-            {task.status === "working" ||
-            (task.status === "funded" && !task.deliverable) ? (
+            {task.status === "open" ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Waiting for a local helper to claim this on the Earn board.
+                Escrow stays locked until you accept their answer.
+              </p>
+            ) : task.status === "working" ||
+              (task.status === "funded" && !task.deliverable) ? (
               <p className="mt-3 text-sm text-muted-foreground">
                 Helper is working — escrow stays locked.
               </p>
@@ -110,6 +134,20 @@ export function TaskDetail({ id }: { id: string }) {
               </p>
             )}
           </div>
+
+          {task.status === "open" && (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-11 rounded-xl"
+                disabled={pending}
+                onClick={onRefund}
+              >
+                Cancel & refund
+              </Button>
+            </div>
+          )}
 
           {error && (
             <div

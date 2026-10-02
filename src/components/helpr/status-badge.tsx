@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { TaskStatus } from "@/lib/types";
 
 const LABELS: Record<TaskStatus, string> = {
+  open: "Open on board",
   funded: "Escrow locked",
   working: "Helper working",
   delivered: "Ready to review",
@@ -13,6 +14,7 @@ const VARIANT: Record<
   TaskStatus,
   "default" | "secondary" | "outline" | "destructive"
 > = {
+  open: "secondary",
   funded: "secondary",
   working: "default",
   delivered: "default",

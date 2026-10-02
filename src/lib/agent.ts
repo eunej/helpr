@@ -27,9 +27,44 @@ export function runHelperAgent(input: RunInput): string {
       return emailDeliverable(input.title, raw, input.helperName);
     case "rewrite":
       return rewriteDeliverable(raw, input.helperName);
+    case "ask-thailand":
+      return localDeliverable("Thailand", input.title, raw, input.helperName);
+    case "ask-vietnam":
+      return localDeliverable("Vietnam", input.title, raw, input.helperName);
     default:
       return generalDeliverable(input.title, raw, input.helperName);
   }
+}
+
+function localDeliverable(
+  country: string,
+  title: string,
+  raw: string,
+  helper: string
+): string {
+  const question =
+    raw ||
+    title ||
+    "How do locals handle this day to day?";
+
+  return [
+    `Local answer · ${country} · ${helper}`,
+    "",
+    "DIRECT ANSWER",
+    capitalize(question),
+    "",
+    "WHAT LOCALS ACTUALLY DO",
+    `• Start with the practical option first — cards and apps locals already use in ${country}.`,
+    "• Confirm prices/times the same day; tourist info goes stale fast.",
+    "• If money is involved, ask for a PromptPay / bank transfer / QR receipt before you commit.",
+    "",
+    "WATCH OUTS",
+    "• Avoid anyone who demands crypto first with no escrow.",
+    "• Screenshot addresses and names — helpful if Grab/maps drop you nearby.",
+    "",
+    "NEXT STEP",
+    "If you share your city + budget + dates, I can narrow this to a concrete neighborhood or office.",
+  ].join("\n");
 }
 
 function resumeDeliverable(

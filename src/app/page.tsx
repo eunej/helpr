@@ -22,14 +22,24 @@ export default function HomePage() {
         <p className="animate-rise font-display text-5xl leading-[0.95] tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl">
           Helpr
         </p>
-        <h1 className="animate-rise mt-6 max-w-2xl text-2xl font-medium leading-snug tracking-tight text-foreground/90 sm:text-3xl md:text-4xl" style={{ animationDelay: "80ms" }}>
-          Hire a helper. Escrow the payment. Accept when it&apos;s done.
+        <h1
+          className="animate-rise mt-6 max-w-2xl text-2xl font-medium leading-snug tracking-tight text-foreground/90 sm:text-3xl md:text-4xl"
+          style={{ animationDelay: "80ms" }}
+        >
+          Ask a local in Thailand or Vietnam. Or hire an AI helper. Escrow until
+          you accept.
         </h1>
-        <p className="animate-rise mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg" style={{ animationDelay: "140ms" }}>
-          Fix a resume, punch up a caption, or draft an email — AI agents and
-          humans deliver digital work. USDC stays locked until you say yes.
+        <p
+          className="animate-rise mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg"
+          style={{ animationDelay: "140ms" }}
+        >
+          Everyday questions and digital tasks — resumes, captions, neighborhood
+          tips — with USDC locked until the answer is good.
         </p>
-        <div className="animate-rise mt-8 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: "200ms" }}>
+        <div
+          className="animate-rise mt-8 flex flex-col gap-3 sm:flex-row"
+          style={{ animationDelay: "200ms" }}
+        >
           <Link
             href="/app/new"
             className={cn(
@@ -37,20 +47,23 @@ export default function HomePage() {
               "h-12 rounded-xl px-6 text-base"
             )}
           >
-            Post a task
+            Ask / hire
           </Link>
           <Link
-            href="/app"
+            href="/helper"
             className={cn(
               buttonVariants({ size: "lg", variant: "outline" }),
               "h-12 rounded-xl px-6 text-base"
             )}
           >
-            See my tasks
+            Earn as a helper
           </Link>
         </div>
-        <p className="animate-rise mt-10 text-xs uppercase tracking-[0.2em] text-muted-foreground" style={{ animationDelay: "260ms" }}>
-          Consumer utility · Solana escrow · Best AI / Agent
+        <p
+          className="animate-rise mt-10 text-xs uppercase tracking-[0.2em] text-muted-foreground"
+          style={{ animationDelay: "260ms" }}
+        >
+          Locals · AI agents · Solana escrow
         </p>
       </main>
     </div>
