@@ -19,10 +19,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Human helpers take a touch longer in the demo.
-    const delayMs = body.helperKind === "human" ? 2200 : 900;
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-
     const deliverable = runHelperAgent({
       category: body.category,
       title: body.title?.trim() || "Untitled task",
