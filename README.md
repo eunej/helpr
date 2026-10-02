@@ -1,21 +1,23 @@
-# Market opportunity brief
+# Helpr
 
-A working strategy brief for **Eunhye Grace J.**: growing markets with unsolved problems, ranked against a Salesforce AE background that includes Coupang Ads, Twitter partnerships, and Vietnam business development.
+**Hire a helper. Escrow the payment. Accept when it’s done.**
 
-This is not a generic TAM slideshow. It is a filter. The question is where *you* can contribute — because you have already sat in the 사장님 conversation, sold platform revenue, and argued in public that agents only matter when they change a partner's next action.
+Helpr is a consumer app for everyday digital tasks — fix a resume, edit a caption, draft an email. An AI agent (or human helper) delivers the work while **USDC stays locked in escrow** until you accept.
 
-## What you will find
+Built for Superteam Thailand’s Chiang Mai Build Lab and Colosseum Crypto World’s Fair — aimed at **Best AI / Agent** and **Best Consumer / Real-World Application**.
 
-1. **Your edge** — the skills and public thesis used to rank markets.
-2. **Compounding markets** — Korea retail media, agentic CRM, seller AI, Korean SME digitalization, SEA commerce.
-3. **Five ranked bets** — with the unsolved job, why you, the wedge, buyer, and risk.
-4. **A first product** — a sample Coupang ads diagnosis that shows platform ROAS versus actual contribution margin.
-5. **A 90-day plan** — twelve conversations, an ugly copilot, one paid design partner.
-6. **Sources** — public 2025–2026 research.
+## Why Solana is here
 
-## Recommended start
+Crypto is the rail, not the brand. Escrow + receipts give trust without Patreon/Upwork middlemen taking a cut of tiny jobs. The UI speaks USD; the demo ledger mimics Solana USDC settlement.
 
-Build a **사장님 ads copilot** for Coupang + Naver. It is the thinnest product that uses your unfair advantage, sits in a market that is compounding, and can later become the partner-growth OS you already pitched at Agentforce World Tour Korea.
+## Demo flow
+
+1. Open the app with a **$50 USDC** demo balance.
+2. Post a task and pick a helper (Nova, Pixel, Quill, or Mira).
+3. Budget locks in escrow; the helper runs and returns a deliverable.
+4. **Accept** to release payment, or **Reject** to refund.
+
+Data lives in your browser (`localStorage`) so the demo works offline of any chain RPC.
 
 ## Run locally
 
@@ -24,15 +26,21 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:43173](http://localhost:43173).
+Open [http://127.0.0.1:43173](http://127.0.0.1:43173).
 
 ```bash
 npm run build
 npm start
 ```
 
-## Notes
+## Stack
 
-- Profile details are inferred from public professional posts and should be treated as a working assumption.
-- Do not point this copilot at live customer data from a current employer without a clean IP and privacy line.
-- Market figures are directional. Recheck any number before you put it in a board deck.
+- Next.js (App Router) + TypeScript + Tailwind CSS v4
+- shadcn/ui (Base UI)
+- Local escrow ledger + helper agent API (`/api/helpers/run`)
+
+## Hackathon notes
+
+- No API keys required — the helper agent uses a deterministic writing pipeline.
+- Reset demo data anytime from the tasks screen.
+- Next step for Colosseum: wire real Solana USDC escrow + optional LLM provider.

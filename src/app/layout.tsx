@@ -1,37 +1,40 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Noto_Sans_KR } from "next/font/google";
+import { DM_Sans, Geist_Mono, Syne } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
+  weight: ["600", "700", "800"],
 });
 
-const notoSansKr = Noto_Sans_KR({
-  variable: "--font-noto-kr",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Where you should build — market brief",
+  title: "Helpr — Hire a helper, escrow until you accept",
   description:
-    "Growing markets with unsolved problems, ranked against a Korea-based Salesforce AE with Coupang Ads, Twitter partnerships, and Vietnam BD experience.",
+    "Post a digital task, lock USDC in escrow, and release payment when you accept the deliverable. AI agents and humans for everyday work.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${fraunces.variable} ${notoSansKr.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${syne.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         {children}
       </body>
     </html>
