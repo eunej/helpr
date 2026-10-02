@@ -1,8 +1,8 @@
 "use client";
 
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { buttonVariants } from "@/components/ui/button";
+import { useWalletPicker } from "@/components/solana/wallet-picker";
 import { useHasMounted } from "@/hooks/use-helpr";
 import { CIRCLE_USDC_FAUCET, shortenAddress } from "@/lib/solana";
 import { useUsdcBalance } from "@/hooks/use-usdc-balance";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export function WalletConnectButton() {
   const mounted = useHasMounted();
   const { connected, publicKey, disconnect, connecting } = useWallet();
-  const { setVisible } = useWalletModal();
+  const { setOpen } = useWalletPicker();
   const { balanceUsd, loading } = useUsdcBalance();
 
   if (!mounted) {
@@ -31,7 +31,7 @@ export function WalletConnectButton() {
     return (
       <button
         type="button"
-        onClick={() => setVisible(true)}
+        onClick={() => setOpen(true)}
         className={cn(
           buttonVariants({ size: "sm", variant: "outline" }),
           "rounded-full px-3"
@@ -46,7 +46,7 @@ export function WalletConnectButton() {
     <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={() => setVisible(true)}
+        onClick={() => setOpen(true)}
         className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5 text-left text-xs text-muted-foreground backdrop-blur-sm"
         title="Change wallet"
       >

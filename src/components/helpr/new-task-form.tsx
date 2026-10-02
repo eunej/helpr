@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useWalletPicker } from "@/components/solana/wallet-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +31,7 @@ export function NewTaskForm() {
   const demoWallet = useDemoWallet();
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
-  const { setVisible } = useWalletModal();
+  const { setOpen: setWalletOpen } = useWalletPicker();
   const { balanceUsd, refresh } = useUsdcBalance();
   const [category, setCategory] = useState<TaskCategory>("ask-thailand");
   const meta = useMemo(
@@ -214,7 +214,7 @@ export function NewTaskForm() {
           {!connected && (
             <button
               type="button"
-              onClick={() => setVisible(true)}
+              onClick={() => setWalletOpen(true)}
               className="text-xs font-medium text-primary underline-offset-2 hover:underline"
             >
               Connect Phantom / Solflare (Devnet)
